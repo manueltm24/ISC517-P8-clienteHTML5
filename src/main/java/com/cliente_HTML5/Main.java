@@ -54,6 +54,14 @@ public class Main {
             return new ModelAndView(model,"home.ftl");
         },freeMarkerEngine);
 
+        get("/eliminar/:id", (request, response) -> {
+            int indice=Integer.parseInt(request.params("id"));
+            listadoEncuestadosMain.remove(indice-1);
+            response.redirect("/inicio");
+            return "";
+        });
+
+
         get("/nuevo", (request,response)-> {
             Map<String, Object> model = new HashMap<>();
 
@@ -66,9 +74,14 @@ public class Main {
         post("/nuevo", (request,response)-> {
             Map<String, Object> model = new HashMap<>();
 
-
+            Encuestado nuevoEncuestado = new Encuestado(listadoEncuestadosMain.size()+1,request.queryParams("nombre"),request.queryParams("sector"),request.queryParams("nivelescolar"));
+            listadoEncuestadosMain.add(nuevoEncuestado);
+            response.redirect("/inicio");
 
             return new ModelAndView(model,"nuevo.ftl");
         },freeMarkerEngine);
     }
+
+
+
 }

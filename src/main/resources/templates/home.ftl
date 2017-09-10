@@ -72,7 +72,7 @@
                     <button type="button" class="btn btn-default">
                         <a href="#">Editar</a></button>
                     <button type="button" class="btn btn-default">
-                        <a href="#">Eliminar</a></button>
+                        <a href="/eliminar/${encuestado.getId()?string.computer}">Eliminar</a></button>
 
                 </div>
             </td>
