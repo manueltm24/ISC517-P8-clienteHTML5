@@ -33,6 +33,8 @@
     <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
     <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/geolocator/2.1.1/geolocator.min.js"></script>
 </head>
 
 <body>
@@ -67,13 +69,10 @@
             <td>${encuestado.getNombre()}</td>
             <td>
                 <div class="btn-group" role="group" aria-label="...">
-                    <button type="button" class="btn btn-default">
-                        <a href="#">Posición georeferencial</a></button>
-                    <button type="button" class="btn btn-default">
-                        <a href="#">Editar</a></button>
-                    <button type="button" class="btn btn-default">
-                        <a href="/eliminar/${encuestado.getId()?string.computer}">Eliminar</a></button>
-
+                    <button type="button" class="btn btn-warning">Posición georeferencial</button>
+                    <button type="button" class="btn btn-primary">Editar</button>
+                    <button type="button" class="btn btn-danger" onclick="location.href='/eliminar/${encuestado.getId()?string.computer}'">Eliminar</button>
+                    <button type="button" class="btn btn-success" onclick="sincronizar()">Sincronizar con el servidor</button>
                 </div>
             </td>
         </tr>
@@ -82,6 +81,20 @@
     </#if>
     </table>
 
+</div>
+
+<div id="ac-wrapper" style='display:none'>
+    <div id="popup">
+        <center>
+            <h2>Geolocalizacion</h2>
+            <div>
+                <span class="close">&times;</span>
+                <button onclick="getLocation()" class="flat-btn">Localizacion de usuario</button>
+                <div id="mapholder"></div>
+            </div>
+            <input type="submit" name="submit" value="Submit" onClick="PopUp('hide')" />
+        </center>
+    </div>
 </div>
 
 <div class="panel panel-primary">
@@ -157,6 +170,67 @@
         var nav = $("#" + id).data("navigation");
         var to = $("#" + id).data("to");
         console.log('nav ' + nav + ' to: ' + to.month + '/' + to.year);
+    }
+
+    function getParameterByName(name, url) {
+        if (!url) url = window.location.href;
+        name = name.replace(/[\[\]]/g, "\\$&");
+        var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+                results = regex.exec(url);
+        if (!results) return null;
+        if (!results[2]) return '';
+        return decodeURIComponent(results[2].replace(/\+/g, " "));
+    }
+
+    function PopUp(hideOrshow) {
+        if (hideOrshow === 'hide') document.getElementById('ac-wrapper').style.display = "none";
+        else document.getElementById('ac-wrapper').removeAttribute('style');
+    }
+
+    function mostrarEsconder() {
+        var resultado = getParameterByName('insertado');
+
+        if (resultado === 'si') {
+            PopUp('show');
+        }
+    }
+
+    window.onload = mostrarEsconder();
+
+    function getLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(showPosition, showError);
+        } else {
+            x.innerHTML = "Geolocation is not supported by this browser.";
+        }
+    }
+    function showPosition(position) {
+        var latlon = position.coords.latitude + "," + position.coords.longitude;
+        var img_url = "https://maps.googleapis.com/maps/api/staticmap?center="
+                +latlon+"&zoom=14&size=400x300&sensor=false&key=AIzaSyBu-916DdpKAjTmJNIgngS6HL_kDIKU0aU";
+        document.getElementById("mapholder").innerHTML = "<img src='"+img_url+"'>";
+    }
+    //To use this code on your website, get a free API key from Google.
+    //Read more at: https://www.w3schools.com/graphics/google_maps_basic.asp
+    function showError(error) {
+        switch(error.code) {
+            case error.PERMISSION_DENIED:
+                x.innerHTML = "User denied the request for Geolocation.";
+                break;
+            case error.POSITION_UNAVAILABLE:
+                x.innerHTML = "Location information is unavailable.";
+                break;
+            case error.TIMEOUT:
+                x.innerHTML = "The request to get user location timed out.";
+                break;
+            case error.UNKNOWN_ERROR:
+                x.innerHTML = "An unknown error occurred.";
+                break;
+        }
+    }
+
+    function sincronizar() {
+
     }
 </script>
 

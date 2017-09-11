@@ -33,6 +33,9 @@
     <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
     <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
+
+    <#--DEXIE DB-->
+    <script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script>
 </head>
 
 <body>
@@ -52,12 +55,17 @@
     <div class="panel panel-primary">
 
         <div class="panel-body">
-            <form  method="post" action="" name="myForm">
+            <form  method="post" action="/inicio" name="myForm" onsubmit="insertarDB()">
                 <div class="row">
 
                     <div class="col-md-6">
                         <div class="form-group">
                                 <fieldset>
+                                    <div class="form-group">
+                                        <label class="control-label" for="id">ID:</label>
+                                        <input type="text" id="id" name="id" class="form-control" placeholder="Inserte su ID" required autofocus>
+                                    </div>
+
                                     <div class="form-group">
                                         <label class="control-label" for="nombre">Nombre:</label>
                                         <input type="text" id="nombre" name="nombre" class="form-control" placeholder="Inserte su nombre" required autofocus>
@@ -130,6 +138,8 @@
 <script src="dashGumTemplate/js/sparkline-chart.js"></script>
 <script src="dashGumTemplate/js/zabuto_calendar.js"></script>
 
+<script src="../publico/dashGumTemplate/js/notify.min.js"></script>
+
 <script type="application/javascript">
     $(document).ready(function () {
         $("#date-popover").popover({html: true, trigger: "manual"});
@@ -162,6 +172,35 @@
         var nav = $("#" + id).data("navigation");
         var to = $("#" + id).data("to");
         console.log('nav ' + nav + ' to: ' + to.month + '/' + to.year);
+    }
+    
+    function insertarDB() {
+        var id_encuestado = document.getElementById("id").value;
+        var nombre_encuestado = document.getElementById("nombre").value;
+        var nivelescolar_encuestado = document.getElementById("nivelescolar").value;
+        var sector_encuestado = document.getElementById("sector").value;
+
+        var db = new Dexie('MyDatabase');
+
+        // Define a schema
+        db.version(1).stores({
+            encuestado: 'id, nombre, nivelescolar, sector'
+        });
+
+        // Open the database
+        db.open().catch(function(error) {
+            alert('Uh oh : ' + error);
+        });
+
+        // or make a new one
+        db.encuestado.add({
+            id: id_encuestado,
+            nombre: nombre_encuestado,
+            nivelescolar: nivelescolar_encuestado,
+            sector: sector_encuestado
+        });
+
+        location.href = '/inicio?insertado=si';
     }
 </script>
 
