@@ -141,7 +141,6 @@
 <script src="/dashGumTemplate/js/offline.min.js"></script>
 
 <script type="application/javascript">
-
     //dependiendo el navegador busco la referencia del objeto.
     var indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB
     //indicamos el nombre y la versión
@@ -242,12 +241,13 @@
             if (cursor) {
                 var url_parametros = "?id=" + cursor.key + "&nombre=" + cursor.value.nombre + "&nivelescolar=" + cursor.value.nivelescolar + "&sector=" + cursor.value.sector + "&longitud=" + cursor.value.longitud + "&latitud=" + cursor.value.latitud;
 
-                cursor.continue();
+                $.get("http://localhost:4567/inicio" + url_parametros,null);
 
-                window.location.replace("http://localhost:4567/inicio" + url_parametros);
+                cursor.continue();
             }
         };
 
+        window.location.replace("http://localhost:4567/inicio");
     }
 
     function geolocalizacion(latitud, longitud) {
