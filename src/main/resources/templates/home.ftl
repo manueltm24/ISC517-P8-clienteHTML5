@@ -73,6 +73,7 @@
                     <button type="button" class="btn btn-primary">Editar</button>
                     <button type="button" class="btn btn-danger" onclick="location.href='/eliminar/${encuestado.getId()?string.computer}'">Eliminar</button>
                     <button type="button" class="btn btn-success" onclick="sincronizar()">Sincronizar con el servidor</button>
+
                 </div>
             </td>
         </tr>
@@ -112,6 +113,10 @@
         <a href="/inicio" class="go-top">
             <i class="fa fa-angle-up"></i>
         </a>
+
+    </div>
+    <div class="text-center">
+        <label id="status">(Ususario tiene conexion a internet!)</label>
     </div>
 </footer>
 <!--footer FIN-->
@@ -127,7 +132,20 @@
 <script src="dashGumTemplate/js/jquery.scrollTo.min.js"></script>
 <script src="dashGumTemplate/js/jquery.nicescroll.js" type="text/javascript"></script>
 <script src="dashGumTemplate/js/jquery.sparkline.js"></script>
+<script>
+    function updateOnlineStatus()
+    {
+        document.getElementById("status").innerHTML = "(Ususario tiene conexion a internet!)";
+    }
 
+    function updateOfflineStatus()
+    {
+        document.getElementById("status").innerHTML = "(Ususario NO tiene conexion a internet!)";
+    }
+
+    window.addEventListener('online',  updateOnlineStatus);
+    window.addEventListener('offline', updateOfflineStatus);
+</script>
 
 <!--common script for all pages-->
 <script src="dashGumTemplate/js/common-scripts.js"></script>
@@ -169,11 +187,11 @@
     };
 
     Offline.on('confirmed-down', function () {
-        alert('Desconectado');
+//        alert('Desconectado');
     });
 
     Offline.on('confirmed-up', function () {
-        alert('Contectado');
+//        alert('Contectado');
     });
 
     $(document).ready(function () {
@@ -248,4 +266,6 @@
 
     }
 </script>
+
+
 
