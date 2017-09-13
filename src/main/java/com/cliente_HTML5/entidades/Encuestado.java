@@ -7,6 +7,8 @@ public class Encuestado {
     private String nombre;
     private String sector;
     private String nivelEscolar;
+    private double latitud;
+    private double longitud;
 
     public int getId() {
         return id;
@@ -40,16 +42,30 @@ public class Encuestado {
         this.nivelEscolar = nivelEscolar;
     }
 
-    public Encuestado() {
+    public double getLatitud() {
+        return latitud;
     }
 
-    public Encuestado(int id, String nombre, String sector, String nivelEscolar) {
+    public void setLatitud(double latitud) {
+        this.latitud = latitud;
+    }
+
+    public double getLongitud() {
+        return longitud;
+    }
+
+    public void setLongitud(double longitud) {
+        this.longitud = longitud;
+    }
+
+    public Encuestado(int id, String nombre, String sector, String nivelEscolar, double latitud, double longitud) {
         this.id = id;
         this.nombre = nombre;
         this.sector = sector;
         this.nivelEscolar = nivelEscolar;
+        this.latitud = latitud;
+        this.longitud = longitud;
     }
-
 
     //DATOS ESTATICOS
 

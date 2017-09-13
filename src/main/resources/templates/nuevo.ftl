@@ -55,11 +55,13 @@
     <div class="panel panel-primary">
 
         <div class="panel-body">
-            <form  method="post" action="/inicio" name="myForm" onsubmit="insertarDB()">
+            <form  method="post" action="/nuevo" name="myForm">
                 <div class="row">
 
                     <div class="col-md-6">
                         <div class="form-group">
+                            <input type="hidden" id="longitud" name="longitud" value=""/>
+                            <input type="hidden" id="latitude" name="latitude" value=""/>
                                 <fieldset>
                                     <div class="form-group">
                                         <label class="control-label" for="id">ID:</label>
@@ -88,7 +90,7 @@
                                     </div>
 
                                     <div class="form-group">
-                                        <button style="border-radius: 30px" class="btn btn-success" type="submit">Registrar</button>
+                                        <button style="border-radius: 30px" class="btn btn-success" type="submit" onclick="insertarDB()">Registrar</button>
                                         <button style="border-radius: 30px" class="btn btn-danger" type="button" onclick="location.href = '/inicio'">Cancelar</button>
                                     </div>
                                 </fieldset>
@@ -141,6 +143,32 @@
 <script src="../publico/dashGumTemplate/js/notify.min.js"></script>
 
 <script type="application/javascript">
+
+    //dependiendo el navegador busco la referencia del objeto.
+    var indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB
+    //indicamos el nombre y la versión
+    var dataBase = indexedDB.open("encuestado_db", 1);
+    //se ejecuta la primera vez que se crea la estructura
+    //o se cambia la versión de la base de datos.
+    dataBase.onupgradeneeded = function (e) {
+        console.log("Creando la estructura de la tabla");
+        //obteniendo la conexión activa
+        active = dataBase.result;
+        //creando la colección:
+        //En este caso, la colección, tendrá un ID autogenerado.
+        var encuestados = active.createObjectStore("encuestados", { keyPath : 'id', autoIncrement : false } );
+        //creando los indices. (Dado por el nombre, campo y opciones)
+        encuestados.createIndex('por_id', 'id', {unique : false});
+
+    };
+    //El evento que se dispara una vez, lo
+    dataBase.onsuccess = function (e) {
+        console.log('Proceso ejecutado de forma correctamente');
+    };
+    dataBase.onerror = function (e) {
+        console.error('Error en el proceso: '+e.target.errorCode);
+    };
+
     $(document).ready(function () {
         $("#date-popover").popover({html: true, trigger: "manual"});
         $("#date-popover").hide();
@@ -164,6 +192,12 @@
                 {type: "block", label: "Regular event", }
             ]
         });
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(showPosition, showError);
+        } else {
+            x.innerHTML = "Geolocation is not supported by this browser.";
+        }
     });
 
 
@@ -173,34 +207,57 @@
         var to = $("#" + id).data("to");
         console.log('nav ' + nav + ' to: ' + to.month + '/' + to.year);
     }
-    
+
     function insertarDB() {
+
+        var active_db = dataBase.result;
+        var tx = active_db.transaction(["encuestados"], "readwrite");
+
         var id_encuestado = document.getElementById("id").value;
         var nombre_encuestado = document.getElementById("nombre").value;
         var nivelescolar_encuestado = document.getElementById("nivelescolar").value;
         var sector_encuestado = document.getElementById("sector").value;
+        var latitude_encuestado = document.getElementById("latitude").value;
+        var longitud_encuestado = document.getElementById("longitud").value;
 
-        var db = new Dexie('MyDatabase');
 
-        // Define a schema
-        db.version(1).stores({
-            encuestado: 'id, nombre, nivelescolar, sector'
-        });
+        var encuestados = tx.objectStore("encuestados");
 
-        // Open the database
-        db.open().catch(function(error) {
-            alert('Uh oh : ' + error);
-        });
-
-        // or make a new one
-        db.encuestado.add({
+        request = encuestados.add({
             id: id_encuestado,
             nombre: nombre_encuestado,
             nivelescolar: nivelescolar_encuestado,
-            sector: sector_encuestado
+            sector: sector_encuestado,
+            longitud: longitud_encuestado,
+            latitud: latitude_encuestado
         });
+    }
 
-        location.href = '/inicio?insertado=si';
+    function showPosition(position) {
+        var lat = position.coords.latitude;
+        var lon = position.coords.longitude;
+
+        $('input[name="latitude"]').val(lat);
+        $('input[name="longitud"]').val(lon);
+    }
+
+    //To use this code on your website, get a free API key from Google.
+    //Read more at: https://www.w3schools.com/graphics/google_maps_basic.asp
+    function showError(error) {
+        switch(error.code) {
+            case error.PERMISSION_DENIED:
+                x.innerHTML = "User denied the request for Geolocation.";
+                break;
+            case error.POSITION_UNAVAILABLE:
+                x.innerHTML = "Location information is unavailable.";
+                break;
+            case error.TIMEOUT:
+                x.innerHTML = "The request to get user location timed out.";
+                break;
+            case error.UNKNOWN_ERROR:
+                x.innerHTML = "An unknown error occurred.";
+                break;
+        }
     }
 </script>
 

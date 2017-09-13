@@ -59,6 +59,19 @@ public class Main {
                 model.put("insertado", "si");
             }
 
+            if (request.queryParams("id") != null) {
+                int id = Integer.parseInt(request.queryParams("id"));
+                String nombre = request.queryParams("nombre");
+                String sector = request.queryParams("sector");
+                String nivelescolar = request.queryParams("nivelescolar");
+                double latitud = Double.parseDouble(request.queryParams("latitud"));
+                double longitud = Double.parseDouble(request.queryParams("longitud"));
+
+                listadoEncuestadosMain.add(new Encuestado(id, nombre, sector, nivelescolar, latitud, longitud));
+
+                response.redirect("/inicio");
+            }
+
             return new ModelAndView(model,"home.ftl");
         },freeMarkerEngine);
 
@@ -72,8 +85,6 @@ public class Main {
 
         get("/nuevo", (request,response)-> {
             Map<String, Object> model = new HashMap<>();
-
-
 
             return new ModelAndView(model,"nuevo.ftl");
         },freeMarkerEngine);

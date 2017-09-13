@@ -99,8 +99,9 @@
 
 <div class="panel panel-primary">
 
-    <div class="panel-body">
-        <button style="border-radius: 30px" class="btn btn-danger" type="button" onclick="location.href = '/nuevo'">Nueva Encuesta</button>
+    <div class="panel-body row form-inline">
+        <button style="border-radius: 30px" class="btn btn-primary" type="button" onclick="location.href = '/nuevo'">Nueva Encuesta</button>
+        <button style="border-radius: 30px" class="btn btn-success" type="button" onclick="sincronizar()">Sincronizar con servidor</button>
     </div>
 </div>
 
@@ -135,10 +136,46 @@
 <script type="text/javascript" src="dashGumTemplate/js/gritter-conf.js"></script>
 
 <!--script for this page-->
-<script src="dashGumTemplate/js/sparkline-chart.js"></script>
-<script src="dashGumTemplate/js/zabuto_calendar.js"></script>
+<script src="/dashGumTemplate/js/sparkline-chart.js"></script>
+<script src="/dashGumTemplate/js/zabuto_calendar.js"></script>
+
+<script src="/dashGumTemplate/js/offline.min.js"></script>
 
 <script type="application/javascript">
+
+    //dependiendo el navegador busco la referencia del objeto.
+    var indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB
+    //indicamos el nombre y la versión
+    var dataBase = indexedDB.open("encuestado_db", 1);
+    //se ejecuta la primera vez que se crea la estructura
+    //o se cambia la versión de la base de datos.
+    dataBase.onupgradeneeded = function (e) {
+        console.log("Creando la estructura de la tabla");
+        //obteniendo la conexión activa
+        active = dataBase.result;
+        //creando la colección:
+        //En este caso, la colección, tendrá un ID autogenerado.
+        var encuestados = active.createObjectStore("encuestados", { keyPath : 'id', autoIncrement : false } );
+        //creando los indices. (Dado por el nombre, campo y opciones)
+        encuestados.createIndex('por_id', 'id', {unique : false});
+
+    };
+    //El evento que se dispara una vez, lo
+    dataBase.onsuccess = function (e) {
+        console.log('Proceso ejecutado de forma correctamente');
+    };
+    dataBase.onerror = function (e) {
+        console.error('Error en el proceso: '+e.target.errorCode);
+    };
+
+    Offline.on('confirmed-down', function () {
+        alert('Desconectado');
+    });
+
+    Offline.on('confirmed-up', function () {
+        alert('Contectado');
+    });
+
     $(document).ready(function () {
         $("#date-popover").popover({html: true, trigger: "manual"});
         $("#date-popover").hide();
@@ -197,39 +234,17 @@
 
     window.onload = mostrarEsconder();
 
-    function getLocation() {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(showPosition, showError);
-        } else {
-            x.innerHTML = "Geolocation is not supported by this browser.";
-        }
-    }
-    function showPosition(position) {
-        var latlon = position.coords.latitude + "," + position.coords.longitude;
-        var img_url = "https://maps.googleapis.com/maps/api/staticmap?center="
-                +latlon+"&zoom=14&size=400x300&sensor=false&key=AIzaSyBu-916DdpKAjTmJNIgngS6HL_kDIKU0aU";
-        document.getElementById("mapholder").innerHTML = "<img src='"+img_url+"'>";
-    }
-    //To use this code on your website, get a free API key from Google.
-    //Read more at: https://www.w3schools.com/graphics/google_maps_basic.asp
-    function showError(error) {
-        switch(error.code) {
-            case error.PERMISSION_DENIED:
-                x.innerHTML = "User denied the request for Geolocation.";
-                break;
-            case error.POSITION_UNAVAILABLE:
-                x.innerHTML = "Location information is unavailable.";
-                break;
-            case error.TIMEOUT:
-                x.innerHTML = "The request to get user location timed out.";
-                break;
-            case error.UNKNOWN_ERROR:
-                x.innerHTML = "An unknown error occurred.";
-                break;
-        }
-    }
-
     function sincronizar() {
+        var objectStore = db.transaction("encuestados").objectStore("encuestados");
+
+        objectStore.openCursor().onsuccess = function(event) {
+            var cursor = event.target.result;
+            if (cursor) {
+                var url_parametros = "?id=" + cursor.key + "&nombre=" + cursor.nombre + "&nivelescolar=" + cursor.nivelescolar + "&sector=" + cursor.sector + "&longitud=" + cursor.longitud + "&latitud=" + cursor.latitud;
+
+                window.location.replace("http://localhost:4567/inicio" + url_parametros);
+            }
+        };
 
     }
 </script>
