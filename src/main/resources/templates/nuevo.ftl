@@ -92,6 +92,8 @@
                                     <div class="form-group">
                                         <button style="border-radius: 30px" class="btn btn-success" type="submit" onclick="insertarDB()">Registrar</button>
                                         <button style="border-radius: 30px" class="btn btn-danger" type="button" onclick="location.href = '/inicio'">Cancelar</button>
+                                        <button style="border-radius: 30px" class="btn btn-primary" type="button" onclick="seleccionar()">Seleccionar</button>
+                                        <button style="border-radius: 30px" class="btn btn-danger" type="button" onclick="borrar()">Borrar</button>
                                     </div>
                                 </fieldset>
 
@@ -258,6 +260,47 @@
                 x.innerHTML = "An unknown error occurred.";
                 break;
         }
+    }
+
+    function seleccionar() {
+        var active_db = dataBase.result;
+        var transaction = active_db.transaction(["encuestados"]);
+        var objectStore = transaction.objectStore("encuestados");
+        var id_encuestado = document.getElementById("id").value;
+        var request = objectStore.get(id_encuestado);
+        request.onerror = function(event) {
+            alert("Error al seleccionar de la base de datos");
+        };
+        request.onsuccess = function(event) {
+            // Do something with the request.result!
+            if(request.result) {
+                var id = request.result.id;
+                var nombre = request.result.nombre;
+                var nivelescolar = request.result.nivelescolar;
+                var sector = request.result.sector;
+
+                document.getElementById("id").value = id;
+                document.getElementById("nombre").value = nombre;
+                document.getElementById("nivelescolar").value = nivelescolar;
+                document.getElementById("sector").value = sector;
+            } else {
+                alert("No se pudo encontrar el dato en la base de datos local.");
+            }
+        };
+
+    }
+
+    function borrar(id_encuestado) {
+        var active_db = dataBase.result;
+
+        var request = active_db.transaction(["encuestados"], "readwrite")
+                .objectStore("encuestados")
+                .delete(id_encuestado);
+        request.onsuccess = function(event) {
+            alert("Objeto borrado de la base de datos local.");
+        };
+
+        window.location.replace("http://localhost:4567/inicio" + url_parametros);
     }
 </script>
 

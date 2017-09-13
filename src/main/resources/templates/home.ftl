@@ -69,10 +69,9 @@
             <td>${encuestado.getNombre()}</td>
             <td>
                 <div class="btn-group" role="group" aria-label="...">
-                    <button type="button" class="btn btn-warning">Posición georeferencial</button>
                     <button type="button" class="btn btn-primary">Editar</button>
                     <button type="button" class="btn btn-danger" onclick="location.href='/eliminar/${encuestado.getId()?string.computer}'">Eliminar</button>
-                    <button type="button" class="btn btn-success" onclick="sincronizar()">Sincronizar con el servidor</button>
+                    <button type="button" class="btn btn-success" onclick="geolocalizacion(${encuestado.getLatitud()}, ${encuestado.getLongitud()})">Mostrar geolocalizacion</button>
                 </div>
             </td>
         </tr>
@@ -235,17 +234,27 @@
     window.onload = mostrarEsconder();
 
     function sincronizar() {
-        var objectStore = db.transaction("encuestados").objectStore("encuestados");
+        var active_db = dataBase.result;
+        var objectStore = active_db.transaction("encuestados").objectStore("encuestados");
 
         objectStore.openCursor().onsuccess = function(event) {
             var cursor = event.target.result;
             if (cursor) {
-                var url_parametros = "?id=" + cursor.key + "&nombre=" + cursor.nombre + "&nivelescolar=" + cursor.nivelescolar + "&sector=" + cursor.sector + "&longitud=" + cursor.longitud + "&latitud=" + cursor.latitud;
+                var url_parametros = "?id=" + cursor.key + "&nombre=" + cursor.value.nombre + "&nivelescolar=" + cursor.value.nivelescolar + "&sector=" + cursor.value.sector + "&longitud=" + cursor.value.longitud + "&latitud=" + cursor.value.latitud;
+
+                cursor.continue();
 
                 window.location.replace("http://localhost:4567/inicio" + url_parametros);
             }
         };
 
+    }
+
+    function geolocalizacion(latitud, longitud) {
+        var latlon = latitud + "," + longitud;
+        var img_url = "https://maps.googleapis.com/maps/api/staticmap?center="
+                +latlon+"&zoom=14&size=400x300&sensor=false&key=AIzaSyBu-916DdpKAjTmJNIgngS6HL_kDIKU0aU";
+        document.getElementById("mapholder").innerHTML = "<img src='"+img_url+"'>";
     }
 </script>
 

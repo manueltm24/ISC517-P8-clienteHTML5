@@ -76,8 +76,12 @@ public class Main {
         },freeMarkerEngine);
 
         get("/eliminar/:id", (request, response) -> {
-            int indice=Integer.parseInt(request.params("id"));
-            listadoEncuestadosMain.remove(indice-1);
+            int id=Integer.parseInt(request.params("id"));
+            for(Encuestado encuestado : listadoEncuestadosMain) {
+                if (encuestado.getId() == id) {
+                    listadoEncuestadosMain.remove(encuestado);
+                }
+            }
             response.redirect("/inicio");
             return "";
         });
