@@ -6,6 +6,7 @@ import java.util.Map;
 
 
 import com.cliente_HTML5.entidades.Encuestado;
+import com.google.gson.Gson;
 import freemarker.template.Configuration;
 import spark.ModelAndView;
 import spark.template.freemarker.FreeMarkerEngine;
@@ -15,6 +16,8 @@ import static spark.Spark.*;
 import static spark.debug.DebugScreen.enableDebugScreen;
 
 public class Main {
+
+    public final static String ACCEPT_TYPE = "application/json";
 
     public static void main(String[] args) {
 
@@ -28,7 +31,7 @@ public class Main {
 
         //Linea para agregar la pantalla de debug. En productivo se debe quitar.
         enableDebugScreen();
-        port(4567);
+//        port(80);
 
         staticFiles.location("/publico");
 
@@ -77,9 +80,9 @@ public class Main {
 
         get("/eliminar/:id", (request, response) -> {
             int id=Integer.parseInt(request.params("id"));
-            for(Encuestado encuestado : listadoEncuestadosMain) {
-                if (encuestado.getId() == id) {
-                    listadoEncuestadosMain.remove(encuestado);
+           for(int i=0;i<listadoEncuestadosMain.size();i++) {
+                if (listadoEncuestadosMain.get(i).getId() == id) {
+                    listadoEncuestadosMain.remove(listadoEncuestadosMain.get(i));
                 }
             }
             response.redirect("/inicio");
@@ -93,16 +96,30 @@ public class Main {
             return new ModelAndView(model,"nuevo.ftl");
         },freeMarkerEngine);
 
-        //POST PARA RECIBIR LOS DATOS DEL FORM
-//        post("/nuevo", (request,response)-> {
-//            Map<String, Object> model = new HashMap<>();
-//
-//            Encuestado nuevoEncuestado = new Encuestado(listadoEncuestadosMain.size()+1,request.queryParams("nombre"),request.queryParams("sector"),request.queryParams("nivelescolar"));
-//            listadoEncuestadosMain.add(nuevoEncuestado);
-//            response.redirect("/inicio");
-//
-//            return new ModelAndView(model,"nuevo.ftl");
-//        },freeMarkerEngine);
+        post("/nuevo", Main.ACCEPT_TYPE, (request, response) -> {
+            Encuestado encuestado = new Gson().fromJson(request.body(), Encuestado.class);
+            listadoEncuestadosMain.add(encuestado);
+
+            return "Sincronizado con el servidor";
+
+        },JsonConverter.json());
+
+        get("/geolocalizacion/:id", (request,response)-> {
+            Map<String, Object> model = new HashMap<>();
+            Encuestado encuestado = new Encuestado();
+
+            for(int i=0;i<listadoEncuestadosMain.size();i++){
+                if(listadoEncuestadosMain.get(i).getId()==Integer.parseInt(request.params("id"))){
+                    encuestado=listadoEncuestadosMain.get(i);
+                }
+            }
+
+            model.put("encuestado",encuestado);
+
+            return new ModelAndView(model,"geolocalizacion.ftl");
+        },freeMarkerEngine);
+
+
     }
 
 

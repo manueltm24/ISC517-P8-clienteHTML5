@@ -58,6 +58,9 @@ public class Encuestado {
         this.longitud = longitud;
     }
 
+    public Encuestado() {
+    }
+
     public Encuestado(int id, String nombre, String sector, String nivelEscolar, double latitud, double longitud) {
         this.id = id;
         this.nombre = nombre;

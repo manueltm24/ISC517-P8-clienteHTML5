@@ -84,16 +84,22 @@
                                         </select>
                                     </div>
 
+
+
+
+
+
+
                                     <div class="form-group">
                                         <label class="control-label" for="sector">Sector:</label>
                                         <input type="text" id="sector" name="sector" class="form-control" placeholder="Inserte su sector" required autofocus>
                                     </div>
 
                                     <div class="form-group">
-                                        <button style="border-radius: 30px" class="btn btn-success" type="submit" onclick="insertarDB()">Registrar</button>
-                                        <button style="border-radius: 30px" class="btn btn-danger" type="button" onclick="location.href = '/inicio'">Cancelar</button>
-                                        <button style="border-radius: 30px" class="btn btn-primary" type="button" onclick="seleccionar()">Seleccionar</button>
-                                        <button style="border-radius: 30px" class="btn btn-danger" type="button" onclick="borrar()">Borrar</button>
+                                        <button style="border-radius: 30px" class="btn btn-success" type="button" onclick="insertarDB()">Registrar</button>
+                                        <button style="border-radius: 30px" class="btn btn-danger" type="button" onclick="editarDB()">Editar</button>
+                                        <button style="border-radius: 30px" class="btn btn-danger" type="button" onclick="guardarCambios()">Guardar</button>
+                                        <button style="border-radius: 30px" class="btn btn-danger" type="button" onclick="borrarEncuesta()">Borrar</button>
                                     </div>
                                 </fieldset>
 
@@ -118,10 +124,6 @@
 </footer>
 <!--footer FIN-->
 
-
-</body>
-
-<script type="text/javascript"></script>
 <!-- js placed at the end of the document so the pages load faster -->
 <script src="dashGumTemplate/js/jquery.js"></script>
 <script src="dashGumTemplate/js/jquery-1.8.3.min.js"></script>
@@ -142,35 +144,28 @@
 <script src="dashGumTemplate/js/sparkline-chart.js"></script>
 <script src="dashGumTemplate/js/zabuto_calendar.js"></script>
 
-<script src="../publico/dashGumTemplate/js/notify.min.js"></script>
+<#--<script type="text/javascript">-->
+    <#--$(document).ready(function () {-->
+        <#--var unique_id = $.gritter.add({-->
+            <#--// (string | mandatory) the heading of the notification-->
+            <#--title: 'Welcome to Dashgum!',-->
+            <#--// (string | mandatory) the text inside the notification-->
+            <#--text: 'Hover me to enable the Close Button. You can hide the left sidebar clicking on the button next to the logo. Free version for <a href="http://blacktie.co" target="_blank" style="color:#ffd777">BlackTie.co</a>.',-->
+            <#--// (string | optional) the image to display on the left-->
+            <#--image: 'dashGumTemplate/img/ui-sam.jpg',-->
+            <#--// (bool | optional) if you want it to fade out on its own or just sit there-->
+            <#--sticky: true,-->
+            <#--// (int | optional) the time you want it to be alive for before fading out-->
+            <#--time: '',-->
+            <#--// (string | optional) the class name you want to apply to that specific message-->
+            <#--class_name: 'my-sticky-class'-->
+        <#--});-->
+
+        <#--return false;-->
+    <#--});-->
+<#--</script>-->
 
 <script type="application/javascript">
-
-    //dependiendo el navegador busco la referencia del objeto.
-    var indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB
-    //indicamos el nombre y la versión
-    var dataBase = indexedDB.open("encuestado_db", 1);
-    //se ejecuta la primera vez que se crea la estructura
-    //o se cambia la versión de la base de datos.
-    dataBase.onupgradeneeded = function (e) {
-        console.log("Creando la estructura de la tabla");
-        //obteniendo la conexión activa
-        active = dataBase.result;
-        //creando la colección:
-        //En este caso, la colección, tendrá un ID autogenerado.
-        var encuestados = active.createObjectStore("encuestados", { keyPath : 'id', autoIncrement : false } );
-        //creando los indices. (Dado por el nombre, campo y opciones)
-        encuestados.createIndex('por_id', 'id', {unique : false});
-
-    };
-    //El evento que se dispara una vez, lo
-    dataBase.onsuccess = function (e) {
-        console.log('Proceso ejecutado de forma correctamente');
-    };
-    dataBase.onerror = function (e) {
-        console.error('Error en el proceso: '+e.target.errorCode);
-    };
-
     $(document).ready(function () {
         $("#date-popover").popover({html: true, trigger: "manual"});
         $("#date-popover").hide();
@@ -194,12 +189,6 @@
                 {type: "block", label: "Regular event", }
             ]
         });
-
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(showPosition, showError);
-        } else {
-            x.innerHTML = "Geolocation is not supported by this browser.";
-        }
     });
 
 
@@ -210,97 +199,342 @@
         console.log('nav ' + nav + ' to: ' + to.month + '/' + to.year);
     }
 
+
+    //dependiendo el navegador busco la referencia del objeto.
+    var indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB
+
+    //indicamos el nombre y la versión
+    var dataBase = indexedDB.open("encuestado_db", 1);
+
+    //se ejecuta la primera vez que se crea la estructura
+    //o se cambia la versión de la base de datos.
+    dataBase.onupgradeneeded = function (e) {
+        console.log("Creando la estructura de la tabla");
+
+        //obteniendo la conexión activa
+        active = dataBase.result;
+
+        //creando la colección:
+        //En este caso, la colección, tendrá un ID autogenerado.
+        var encuestados = active.createObjectStore("encuestados", {keyPath: 'id', autoIncrement: false});
+
+        //creando los indices. (Dado por el nombre, campo y opciones)
+        encuestados.createIndex('por_id', 'id', {unique: true});
+
+    };
+
     function insertarDB() {
 
+    var active_db = dataBase.result;
+    var tx = active_db.transaction(["encuestados"], "readwrite");
+
+    var id_encuestado = document.getElementById("id").value;
+    var nombre_encuestado = document.getElementById("nombre").value;
+    var nivelescolar_encuestado = document.getElementById("nivelescolar").value;
+    var sector_encuestado = document.getElementById("sector").value;
+    var latitude_encuestado = document.getElementById("latitude").value;
+    var longitud_encuestado = document.getElementById("longitud").value;
+
+
+    var encuestados = tx.objectStore("encuestados");
+
+    request = encuestados.add({
+    id: id_encuestado,
+    nombre: nombre_encuestado,
+    nivelescolar: nivelescolar_encuestado,
+    sector: sector_encuestado,
+    longitud: longitud_encuestado,
+    latitud: latitude_encuestado
+    });
+
+    alert("Insertado en la BD Local");
+
+    }
+
+    function editarDB() {
+
+
+        //abriendo la transacción en modo escritura.
         var active_db = dataBase.result;
         var tx = active_db.transaction(["encuestados"], "readwrite");
-
-        var id_encuestado = document.getElementById("id").value;
-        var nombre_encuestado = document.getElementById("nombre").value;
-        var nivelescolar_encuestado = document.getElementById("nivelescolar").value;
-        var sector_encuestado = document.getElementById("sector").value;
-        var latitude_encuestado = document.getElementById("latitude").value;
-        var longitud_encuestado = document.getElementById("longitud").value;
-
-
         var encuestados = tx.objectStore("encuestados");
 
-        request = encuestados.add({
-            id: id_encuestado,
-            nombre: nombre_encuestado,
-            nivelescolar: nivelescolar_encuestado,
-            sector: sector_encuestado,
-            longitud: longitud_encuestado,
-            latitud: latitude_encuestado
-        });
-    }
+        //buscando paste por la referencia al key.
+        encuestados.get(document.getElementById("id").value).onsuccess = function(e) {
 
-    function showPosition(position) {
-        var lat = position.coords.latitude;
-        var lon = position.coords.longitude;
+            var resultado = e.target.result;
+            console.log("los datos: "+JSON.stringify(resultado));
 
-        $('input[name="latitude"]').val(lat);
-        $('input[name="longitud"]').val(lon);
-    }
+            if(resultado !== undefined){
+                document.querySelector("#nombre").value = resultado.nombre;
+                document.querySelector("#sector").value = resultado.sector;
+                document.querySelector("#nivelescolar").value = resultado.nivelescolar;
 
-    //To use this code on your website, get a free API key from Google.
-    //Read more at: https://www.w3schools.com/graphics/google_maps_basic.asp
-    function showError(error) {
-        switch(error.code) {
-            case error.PERMISSION_DENIED:
-                x.innerHTML = "User denied the request for Geolocation.";
-                break;
-            case error.POSITION_UNAVAILABLE:
-                x.innerHTML = "Location information is unavailable.";
-                break;
-            case error.TIMEOUT:
-                x.innerHTML = "The request to get user location timed out.";
-                break;
-            case error.UNKNOWN_ERROR:
-                x.innerHTML = "An unknown error occurred.";
-                break;
-        }
-    }
-
-    function seleccionar() {
-        var active_db = dataBase.result;
-        var transaction = active_db.transaction(["encuestados"]);
-        var objectStore = transaction.objectStore("encuestados");
-        var id_encuestado = document.getElementById("id").value;
-        var request = objectStore.get(id_encuestado);
-        request.onerror = function(event) {
-            alert("Error al seleccionar de la base de datos");
-        };
-        request.onsuccess = function(event) {
-            // Do something with the request.result!
-            if(request.result) {
-                var id = request.result.id;
-                var nombre = request.result.nombre;
-                var nivelescolar = request.result.nivelescolar;
-                var sector = request.result.sector;
-
-                document.getElementById("id").value = id;
-                document.getElementById("nombre").value = nombre;
-                document.getElementById("nivelescolar").value = nivelescolar;
-                document.getElementById("sector").value = sector;
-            } else {
-                alert("No se pudo encontrar el dato en la base de datos local.");
+            }else{
+                console.log("Encuesta no encontrado...");
             }
         };
 
     }
 
-    function borrar(id_encuestado) {
+    function guardarCambios(){
+        //abriendo la transacción en modo escritura.
         var active_db = dataBase.result;
+        var tx = active_db.transaction(["encuestados"], "readwrite");
+        var encuestados = tx.objectStore("encuestados");
 
-        var request = active_db.transaction(["encuestados"], "readwrite")
-                .objectStore("encuestados")
-                .delete(id_encuestado);
-        request.onsuccess = function(event) {
-            alert("Objeto borrado de la base de datos local.");
+        //buscando paste por la referencia al key.
+        encuestados.get(document.getElementById("id").value).onsuccess = function(e) {
+
+            var resultado = e.target.result;
+            console.log("los datos: "+JSON.stringify(resultado));
+
+            if(resultado !== undefined){
+                resultado.nombre= document.querySelector("#nombre").value;
+                resultado.sector= document.querySelector("#sector").value ;
+                resultado.nivelEscolar = document.querySelector("#nivelescolar").value ;
+                resultado.latitude= document.querySelector("#latitude").value.toString();
+                resultado.longitud= document.querySelector("#longitud").value.toString();
+
+                var solicitudUpdate = encuestados.put(resultado);
+
+                //eventos.
+                solicitudUpdate.onsuccess = function (e) {
+                    console.log("los datos: "+JSON.stringify(resultado));
+                    console.log("Datos Actualizados....");
+                }
+
+                solicitudUpdate.onerror = function (e) {
+                    console.error("Error Datos Actualizados....");
+                }
+
+            }else{
+                console.log("Encuesta no encontrada...");
+            }
         };
-
-        window.location.replace("http://localhost:4567/inicio" + url_parametros);
     }
+
+    function borrarEncuesta() {
+
+
+
+        //abriendo la transacción en modo escritura.
+        var active_db = dataBase.result;
+        var tx = active_db.transaction(["encuestados"], "readwrite");
+        var encuestados = tx.objectStore("encuestados");
+
+        //buscando paste por la referencia al key.
+        encuestados.delete(document.getElementById("id").value).onsuccess = function(e) {
+            console.log("Encuesta eliminado...");
+        };
+    }
+
+
+    //Geolocalizacion
+    var id, cantidad = 0;
+    //Indica las opciones para llamar al GPS.
+    var opcionesGPS = {
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 0
+    }
+
+    $(document).ready(function () {
+
+        console.log("Ejemplo de Geolocalizacion");
+
+        //Obteniendo la referencia directa.
+        navigator.geolocation.getCurrentPosition(function (geodata) {
+            var coordenadas = geodata.coords;
+            $("#posicionGps").text("Latitud: " + coordenadas.latitude + ", Longitud: " + coordenadas.longitude + ", Precisión: " + coordenadas.accuracy + " metros");
+
+
+            $('input[name="latitude"]').val(coordenadas.latitude);
+            $('input[name="longitud"]').val(coordenadas.longitude);
+
+        }, function () {
+            $("#posicionGps").text("No permite el acceso del API GEO");
+        }, opcionesGPS);
+
+        //Obteniendo el cambio de referencia.
+        id = navigator.geolocation.watchPosition(function (geodata) {
+            var coordenadas = geodata.coords;
+            $("#posicionGps2").text("Latitud: " + coordenadas.latitude + ", Longitud: " + coordenadas.longitude + ", Precisión: " + coordenadas.accuracy + " metros, cantidad: " + cantidad);
+            cantidad++;
+            if (cantidad >= 5) {
+                navigator.geolocation.clearWatch(id);
+                console.log("Finalizando la trama")
+            }
+        }, function (error) {
+            //recibe un objeto con dos propiedades: code y message.
+            $("#posicionGps2").text("No permite el acceso del API GEO. Codigo: " + error.code + ", mensaje: " + error.message);
+        });
+    });
+
+
 </script>
+
+
+</body>
+</html>
+
+<#--<script type="application/javascript">-->
+
+    <#--//dependiendo el navegador busco la referencia del objeto.-->
+    <#--var indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB-->
+    <#--//indicamos el nombre y la versión-->
+    <#--var dataBase = indexedDB.open("encuestado_db", 1);-->
+    <#--//se ejecuta la primera vez que se crea la estructura-->
+    <#--//o se cambia la versión de la base de datos.-->
+    <#--dataBase.onupgradeneeded = function (e) {-->
+        <#--console.log("Creando la estructura de la tabla");-->
+        <#--//obteniendo la conexión activa-->
+        <#--active = dataBase.result;-->
+        <#--//creando la colección:-->
+        <#--//En este caso, la colección, tendrá un ID autogenerado.-->
+        <#--var encuestados = active.createObjectStore("encuestados", { keyPath : 'id', autoIncrement : false } );-->
+        <#--//creando los indices. (Dado por el nombre, campo y opciones)-->
+        <#--encuestados.createIndex('por_id', 'id', {unique : false});-->
+
+    <#--};-->
+    <#--//El evento que se dispara una vez, lo-->
+    <#--dataBase.onsuccess = function (e) {-->
+        <#--console.log('Proceso ejecutado de forma correctamente');-->
+    <#--};-->
+    <#--dataBase.onerror = function (e) {-->
+        <#--console.error('Error en el proceso: '+e.target.errorCode);-->
+    <#--};-->
+
+<#--//    $(document).ready(function () {-->
+<#--//        $("#date-popover").popover({html: true, trigger: "manual"});-->
+<#--//        $("#date-popover").hide();-->
+<#--//        $("#date-popover").click(function (e) {-->
+<#--//            $(this).hide();-->
+<#--//        });-->
+<#--//-->
+<#--//        $("#my-calendar").zabuto_calendar({-->
+<#--//            action: function () {-->
+<#--//                return myDateFunction(this.id, false);-->
+<#--//            },-->
+<#--//            action_nav: function () {-->
+<#--//                return myNavFunction(this.id);-->
+<#--//            },-->
+<#--//            ajax: {-->
+<#--//                url: "show_data.php?action=1",-->
+<#--//                modal: true-->
+<#--//            },-->
+<#--//            legend: [-->
+<#--//                {type: "text", label: "Special event", badge: "00"},-->
+<#--//                {type: "block", label: "Regular event", }-->
+<#--//            ]-->
+<#--//        });-->
+<#--//-->
+<#--//        if (navigator.geolocation) {-->
+<#--//            navigator.geolocation.getCurrentPosition(showPosition, showError);-->
+<#--//        } else {-->
+<#--//            x.innerHTML = "Geolocation is not supported by this browser.";-->
+<#--//        }-->
+    <#--});-->
+
+
+    <#--function myNavFunction(id) {-->
+        <#--$("#date-popover").hide();-->
+        <#--var nav = $("#" + id).data("navigation");-->
+        <#--var to = $("#" + id).data("to");-->
+        <#--console.log('nav ' + nav + ' to: ' + to.month + '/' + to.year);-->
+    <#--}-->
+
+    <#--function insertarDB() {-->
+
+        <#--var active_db = dataBase.result;-->
+        <#--var tx = active_db.transaction(["encuestados"], "readwrite");-->
+
+        <#--var id_encuestado = document.getElementById("id").value;-->
+        <#--var nombre_encuestado = document.getElementById("nombre").value;-->
+        <#--var nivelescolar_encuestado = document.getElementById("nivelescolar").value;-->
+        <#--var sector_encuestado = document.getElementById("sector").value;-->
+        <#--var latitude_encuestado = document.getElementById("latitude").value;-->
+        <#--var longitud_encuestado = document.getElementById("longitud").value;-->
+
+
+        <#--var encuestados = tx.objectStore("encuestados");-->
+
+        <#--request = encuestados.add({-->
+            <#--id: id_encuestado,-->
+            <#--nombre: nombre_encuestado,-->
+            <#--nivelescolar: nivelescolar_encuestado,-->
+            <#--sector: sector_encuestado,-->
+            <#--longitud: longitud_encuestado,-->
+            <#--latitud: latitude_encuestado-->
+        <#--});-->
+    <#--}-->
+
+<#--//    function showPosition(position) {-->
+<#--//        var lat = position.coords.latitude;-->
+<#--//        var lon = position.coords.longitude;-->
+<#--//-->
+<#--//        $('input[name="latitude"]').val(lat);-->
+<#--//        $('input[name="longitud"]').val(lon);-->
+<#--//    }-->
+<#--//-->
+<#--//    //To use this code on your website, get a free API key from Google.-->
+<#--//    //Read more at: https://www.w3schools.com/graphics/google_maps_basic.asp-->
+<#--//    function showError(error) {-->
+<#--//        switch(error.code) {-->
+<#--//            case error.PERMISSION_DENIED:-->
+<#--//                x.innerHTML = "User denied the request for Geolocation.";-->
+<#--//                break;-->
+<#--//            case error.POSITION_UNAVAILABLE:-->
+<#--//                x.innerHTML = "Location information is unavailable.";-->
+<#--//                break;-->
+<#--//            case error.TIMEOUT:-->
+<#--//                x.innerHTML = "The request to get user location timed out.";-->
+<#--//                break;-->
+<#--//            case error.UNKNOWN_ERROR:-->
+<#--//                x.innerHTML = "An unknown error occurred.";-->
+<#--//                break;-->
+<#--//        }-->
+<#--//    }-->
+<#--//-->
+<#--//    function seleccionar() {-->
+<#--//        var active_db = dataBase.result;-->
+<#--//        var transaction = active_db.transaction(["encuestados"]);-->
+<#--//        var objectStore = transaction.objectStore("encuestados");-->
+<#--//        var id_encuestado = document.getElementById("id").value;-->
+<#--//        var request = objectStore.get(id_encuestado);-->
+<#--//        request.onerror = function(event) {-->
+<#--//            alert("Error al seleccionar de la base de datos");-->
+<#--//        };-->
+<#--//        request.onsuccess = function(event) {-->
+<#--//            // Do something with the request.result!-->
+<#--//            if(request.result) {-->
+<#--//                var id = request.result.id;-->
+<#--//                var nombre = request.result.nombre;-->
+<#--//                var nivelescolar = request.result.nivelescolar;-->
+<#--//                var sector = request.result.sector;-->
+<#--//-->
+<#--//                document.getElementById("id").value = id;-->
+<#--//                document.getElementById("nombre").value = nombre;-->
+<#--//                document.getElementById("nivelescolar").value = nivelescolar;-->
+<#--//                document.getElementById("sector").value = sector;-->
+<#--//            } else {-->
+<#--//                alert("No se pudo encontrar el dato en la base de datos local.");-->
+<#--//            }-->
+<#--//        };-->
+<#--//-->
+<#--//    }-->
+<#--//-->
+<#--//    function borrar(id_encuestado) {-->
+<#--//        var active_db = dataBase.result;-->
+<#--//-->
+<#--//        var request = active_db.transaction(["encuestados"], "readwrite")-->
+<#--//                .objectStore("encuestados")-->
+<#--//                .delete(id_encuestado);-->
+<#--//        request.onsuccess = function(event) {-->
+<#--//            alert("Objeto borrado de la base de datos local.");-->
+<#--//        };-->
+<#--//-->
+<#--//        window.location.replace("http://localhost:4567/inicio" + url_parametros);-->
+<#--//    }-->
+<#--</script>-->
 

@@ -59,6 +59,9 @@
         <tr>
             <th>#</th>
             <th>Nombre del encuestado</th>
+            <th>Latitud</th>
+            <th>Longitud</th>
+
         </tr>
         </thead>
     <tbody>
@@ -67,11 +70,14 @@
         <tr>
             <td>${encuestado.getId()}</td>
             <td>${encuestado.getNombre()}</td>
+            <td>${encuestado.getLatitud()}</td>
+            <td>${encuestado.getLongitud()}</td>
+
+
             <td>
                 <div class="btn-group" role="group" aria-label="...">
-                    <button type="button" class="btn btn-primary">Editar</button>
                     <button type="button" class="btn btn-danger" onclick="location.href='/eliminar/${encuestado.getId()?string.computer}'">Eliminar</button>
-                    <button type="button" class="btn btn-success" onclick="geolocalizacion(${encuestado.getLatitud()}, ${encuestado.getLongitud()})">Mostrar geolocalizacion</button>
+                    <button type="button" class="btn btn-success" onclick="location.href='/geolocalizacion/${encuestado.getId()?string.computer}'">Mostrar geolocalizacion</button>
                 </div>
             </td>
         </tr>
@@ -82,26 +88,23 @@
 
 </div>
 
-<div id="ac-wrapper" style='display:none'>
-    <div id="popup">
-        <center>
-            <h2>Geolocalizacion</h2>
-            <div>
-                <span class="close">&times;</span>
-                <button onclick="getLocation()" class="flat-btn">Localizacion de usuario</button>
-                <div id="mapholder"></div>
-            </div>
-            <input type="submit" name="submit" value="Submit" onClick="PopUp('hide')" />
-        </center>
-    </div>
-</div>
 
 <div class="panel panel-primary">
 
     <div class="panel-body row form-inline">
         <button style="border-radius: 30px" class="btn btn-primary" type="button" onclick="location.href = '/nuevo'">Nueva Encuesta</button>
-        <button style="border-radius: 30px" class="btn btn-success" type="button" onclick="sincronizar()">Sincronizar con servidor</button>
+        <button style="border-radius: 30px" class="btn btn-success" type="button" id="sincronizar">Sincronizar con servidor</button>
     </div>
+
+    <#--<div class="form-group">-->
+        <#--<input type="number" placeholder="Latitud" class="form-control" name="latitude" id="latitude" aria-describedby="sizing-addon1"-->
+               <#--size="10" pattern=".{4,}">-->
+    <#--</div>-->
+
+    <#--<div class="form-group">-->
+        <#--<input type="number" placeholder="Longitud" class="form-control" name="longitud" id="longitud" aria-describedby="sizing-addon1"-->
+               <#--size="10" pattern=".{4,}">-->
+    <#--</div>-->
 </div>
 
 <!--footer INICIO-->
@@ -115,9 +118,36 @@
 </footer>
 <!--footer FIN-->
 
-</body>
+<#--POPUP-->
 
-<script type="text/javascript"></script>
+<div class="container">
+    <!-- Modal -->
+    <div class="modal fade"  id="localizacionPop" role="dialog">
+        <div class="modal-dialog">
+
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Localizacion</h4>
+                </div>
+                <div  class="modal-body">
+                    <div id="map">
+
+                    </div>
+                </div>
+            <#--<div class="modal-footer">-->
+            <#--<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>-->
+            <#--</div>-->
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<#--POPUP FIN-->
+
+
 <!-- js placed at the end of the document so the pages load faster -->
 <script src="dashGumTemplate/js/jquery.js"></script>
 <script src="dashGumTemplate/js/jquery-1.8.3.min.js"></script>
@@ -135,45 +165,31 @@
 <script type="text/javascript" src="dashGumTemplate/js/gritter-conf.js"></script>
 
 <!--script for this page-->
-<script src="/dashGumTemplate/js/sparkline-chart.js"></script>
-<script src="/dashGumTemplate/js/zabuto_calendar.js"></script>
+<script src="dashGumTemplate/js/sparkline-chart.js"></script>
+<script src="dashGumTemplate/js/zabuto_calendar.js"></script>
 
-<script src="/dashGumTemplate/js/offline.min.js"></script>
+<#--<script type="text/javascript">-->
+<#--$(document).ready(function () {-->
+<#--var unique_id = $.gritter.add({-->
+<#--// (string | mandatory) the heading of the notification-->
+<#--title: 'Welcome to Dashgum!',-->
+<#--// (string | mandatory) the text inside the notification-->
+<#--text: 'Hover me to enable the Close Button. You can hide the left sidebar clicking on the button next to the logo. Free version for <a href="http://blacktie.co" target="_blank" style="color:#ffd777">BlackTie.co</a>.',-->
+<#--// (string | optional) the image to display on the left-->
+<#--image: 'dashGumTemplate/img/ui-sam.jpg',-->
+<#--// (bool | optional) if you want it to fade out on its own or just sit there-->
+<#--sticky: true,-->
+<#--// (int | optional) the time you want it to be alive for before fading out-->
+<#--time: '',-->
+<#--// (string | optional) the class name you want to apply to that specific message-->
+<#--class_name: 'my-sticky-class'-->
+<#--});-->
+
+<#--return false;-->
+<#--});-->
+<#--</script>-->
 
 <script type="application/javascript">
-    //dependiendo el navegador busco la referencia del objeto.
-    var indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB
-    //indicamos el nombre y la versión
-    var dataBase = indexedDB.open("encuestado_db", 1);
-    //se ejecuta la primera vez que se crea la estructura
-    //o se cambia la versión de la base de datos.
-    dataBase.onupgradeneeded = function (e) {
-        console.log("Creando la estructura de la tabla");
-        //obteniendo la conexión activa
-        active = dataBase.result;
-        //creando la colección:
-        //En este caso, la colección, tendrá un ID autogenerado.
-        var encuestados = active.createObjectStore("encuestados", { keyPath : 'id', autoIncrement : false } );
-        //creando los indices. (Dado por el nombre, campo y opciones)
-        encuestados.createIndex('por_id', 'id', {unique : false});
-
-    };
-    //El evento que se dispara una vez, lo
-    dataBase.onsuccess = function (e) {
-        console.log('Proceso ejecutado de forma correctamente');
-    };
-    dataBase.onerror = function (e) {
-        console.error('Error en el proceso: '+e.target.errorCode);
-    };
-
-    Offline.on('confirmed-down', function () {
-        alert('Desconectado');
-    });
-
-    Offline.on('confirmed-up', function () {
-        alert('Contectado');
-    });
-
     $(document).ready(function () {
         $("#date-popover").popover({html: true, trigger: "manual"});
         $("#date-popover").hide();
@@ -207,55 +223,113 @@
         console.log('nav ' + nav + ' to: ' + to.month + '/' + to.year);
     }
 
-    function getParameterByName(name, url) {
-        if (!url) url = window.location.href;
-        name = name.replace(/[\[\]]/g, "\\$&");
-        var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
-                results = regex.exec(url);
-        if (!results) return null;
-        if (!results[2]) return '';
-        return decodeURIComponent(results[2].replace(/\+/g, " "));
-    }
 
-    function PopUp(hideOrshow) {
-        if (hideOrshow === 'hide') document.getElementById('ac-wrapper').style.display = "none";
-        else document.getElementById('ac-wrapper').removeAttribute('style');
-    }
+    //dependiendo el navegador busco la referencia del objeto.
+    var indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB
 
-    function mostrarEsconder() {
-        var resultado = getParameterByName('insertado');
+    //indicamos el nombre y la versión
+    var dataBase = indexedDB.open("encuestado_db", 1);
 
-        if (resultado === 'si') {
-            PopUp('show');
-        }
-    }
+    //se ejecuta la primera vez que se crea la estructura
+    //o se cambia la versión de la base de datos.
+    dataBase.onupgradeneeded = function (e) {
+        console.log("Creando la estructura de la tabla");
 
-    window.onload = mostrarEsconder();
+        //obteniendo la conexión activa
+        active = dataBase.result;
 
-    function sincronizar() {
-        var active_db = dataBase.result;
-        var objectStore = active_db.transaction("encuestados").objectStore("encuestados");
+        //creando la colección:
+        //En este caso, la colección, tendrá un ID autogenerado.
+        var encuestados = active.createObjectStore("encuestados", {keyPath: 'id', autoIncrement: false});
 
-        objectStore.openCursor().onsuccess = function(event) {
-            var cursor = event.target.result;
+        //creando los indices. (Dado por el nombre, campo y opciones)
+        encuestados.createIndex('por_id', 'id', {unique: true});
+
+    };
+
+    $(document).ready(function () {
+        $("#sincronizar").click(function () {
+            if (navigator.onLine) {
+            alert("Vamos a sincronizar");
+                listarDatos();
+            } else {
+                alert('Actualmente el navegador esta offline');
+            }
+
+        });
+    });
+
+    function listarDatos() {
+
+        //por defecto si no lo indico el tipo de transacción será readonly
+        var data = dataBase.result.transaction(["encuestados"]);
+        var encuestas = data.objectStore("encuestados");
+        var contador = 0;
+        var encuestas_recuperados = [];
+
+        //abriendo el cursor.
+        encuestas.openCursor().onsuccess = function (e) {
+            //recuperando la posicion del cursor
+            var cursor = e.target.result;
             if (cursor) {
-                var url_parametros = "?id=" + cursor.key + "&nombre=" + cursor.value.nombre + "&nivelescolar=" + cursor.value.nivelescolar + "&sector=" + cursor.value.sector + "&longitud=" + cursor.value.longitud + "&latitud=" + cursor.value.latitud;
+                contador++;
+                //recuperando el objeto.
+                encuestas_recuperados.push(cursor.value);
 
-                $.get("http://localhost:4567/inicio" + url_parametros,null);
-
+                //Función que permite seguir recorriendo el cursor.
                 cursor.continue();
+
+            } else {
+                console.log("La cantidad de registros recuperados es: " + contador);
             }
         };
 
-        window.location.replace("http://localhost:4567/inicio");
+        //Una vez que se realiza la operación llamo la impresión.
+        data.oncomplete = function () {
+            //imprimirTabla(encuestas_recuperados);
+            sincronizar(encuestas_recuperados);
+        }
+
     }
 
-    function geolocalizacion(latitud, longitud) {
-        var latlon = latitud + "," + longitud;
-        var img_url = "https://maps.googleapis.com/maps/api/staticmap?center="
-                +latlon+"&zoom=14&size=400x300&sensor=false&key=AIzaSyBu-916DdpKAjTmJNIgngS6HL_kDIKU0aU";
-        document.getElementById("mapholder").innerHTML = "<img src='"+img_url+"'>";
+    function sincronizar(lista){
+        console.log(lista);
+        for (var key in lista) {
+            console.log( lista[key].nombre+"/"+lista[key].sector+ "/"
+                    + lista[key].nivelescolar+"/"+lista[key].latitud+"/"+ lista[key].longitud);
+
+            $.ajax({
+                type: "POST",
+                url:'/nuevo',
+                dataType: "JSON",
+                contentType:"application/json; charset=utf-8",
+                data:JSON.stringify({
+                    nombre: lista[key].nombre,
+                    sector:lista[key].sector,
+                    nivelEscolar:lista[key].nivelescolar,
+                    latitud: lista[key].latitud,
+                    longitud: lista[key].longitud
+
+                })
+                ,
+                success:(function (data) {
+//                    alert(data.data)
+                }),
+                error :(function(data){
+//                    alert(data.data)
+                })
+            });
+
+        }
+//        clearData();
+
     }
+
+
 </script>
 
 
+
+
+</body>
+</html>
